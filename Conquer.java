@@ -1,3 +1,8 @@
+/*
+* name: hiteshi shah (hss7374)
+* description: to implement the conquer algorithm for refining queries with missing tuples
+* */
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
@@ -28,6 +33,9 @@ class Conquer{
 
     public static int d = 0;
 
+    /**
+     * function to replace the values of the selection predicates
+     */
     static class ReplaceLongValues extends ExpressionDeParser {
         @Override
         public void visit(AndExpression expr) {
@@ -94,6 +102,12 @@ class Conquer{
         }
     }
 
+    /**
+     * function to rebuild the query after its selection predicate values have been modified
+     * @param sql : the input SQL query
+     * @return the modified SQL query
+     * @throws JSQLParserException
+     */
     public static String cleanStatement(String sql) throws JSQLParserException {
         StringBuilder buffer = new StringBuilder();
         ExpressionDeParser expr = new Conquer.ReplaceLongValues();
@@ -110,12 +124,25 @@ class Conquer{
         return stmtDeparser.getBuffer().toString();
     }
 
+    /**
+     * function to compute and return the refined query after changing its selection predicate values
+     * @param query : the input SQL query
+     * @return the refined query
+     * @throws JSQLParserException
+     */
     public static String getRefinedQuery(String query) throws JSQLParserException {
         String refinedQuery = cleanStatement(query);
         selectionAttributeValues.remove(1);
         return refinedQuery;
     }
 
+    /**
+     * function to add matching tuples to M
+     * @param m : the set of tuples that match the why-not questions
+     * @param allTuples : the set of all join tuples in Q*phi
+     * @param s : the why-not questions
+     * @return the updated M
+     */
     public static ArrayList<ArrayList<String>> addToM(ArrayList<ArrayList<String>> m, ArrayList<ArrayList<String>> allTuples,
                                                       ArrayList<String> s) {
         String firstAttr = s.get(0);
@@ -152,6 +179,13 @@ class Conquer{
         return m;
     }
 
+    /**
+     * function to compute and return all the skyline tuples
+     * @param s : the why-not questions
+     * @param allTuples : set of all join tuples in Q*phi
+     * @return the skyline tuples
+     * @throws Exception
+     */
     public static ArrayList<String> getSkylineTuples(ArrayList<String> s, ArrayList<ArrayList<String>> allTuples) throws Exception {
 
         ArrayList<ArrayList<String>> m = new ArrayList<>();
@@ -237,6 +271,19 @@ class Conquer{
         return skylineTuples;
     }
 
+    /**
+     * function to add selection predicates to the query
+     * @param refinedQuery : the query to add selection predicates to
+     * @param allTuples : the set of all join tuples in Q*phi
+     * @param queryTuples : the set of the query tuples in Q*
+     * @param s : why-not questions
+     * @param select : the set of column-names in the SELECT clause
+     * @param count : the current number of tuples in the refined query
+     * @param idealCount : the ideal number of tuples
+     * @param keys : the set of keys in the join
+     * @return the new refined query with/without the added selection predicates
+     * @throws SQLException
+     */
     public static String addSelectionPredicates(String refinedQuery, ArrayList<ArrayList<String>> allTuples,
                                                 ArrayList<ArrayList<String>> queryTuples, ArrayList<ArrayList<String>> s,
                                                 ArrayList<String> select, int count, int idealCount, Statement stmt,
@@ -385,6 +432,17 @@ class Conquer{
         return refinedQuery;
     }
 
+    /**
+     * function to compute refined queries from the same schema as the input query
+     * @param query : the input SQL query
+     * @param s : the why-not questions
+     * @param allTuples : set of all the join tuples in Q*phi
+     * @param queryTuples : set of all the query tuples in Q*
+     * @param select : set of all the column-names in the SELECT clause
+     * @param keys : set of keys in the join
+     * @return the set of refined queries
+     * @throws Exception
+     */
     public static ArrayList<String> computeRefinedQueries(Statement stmt, String query, ArrayList<ArrayList<String>> s,
                                                           ArrayList<ArrayList<String>> allTuples, ArrayList<ArrayList<String>> queryTuples,
                                                           ArrayList<String> select, Set<String> keys) throws Exception {
@@ -549,6 +607,19 @@ class Conquer{
         return refinedQueries;
     }
 
+    /**
+     * function to compute refined queries from schemas that are different from the input query
+     * @param s : the updated why-not questions
+     * @param potentialJoins : the map of tables and their foreign keys
+     * @param selectTables : the tables that the columns in the SELECT clause belong to
+     * @param select : the set of column-names in the SELECT clause
+     * @param keys : the keys in the join
+     * @param ogS : the original why-not questions
+     * @param query : the input SQL query
+     * @param queryTuples : the set of query tuples in Q*
+     * @return the set of refined queries
+     * @throws Exception
+     */
     public static ArrayList<String> computeRefinedQueries(Statement stmt, ArrayList<ArrayList<String>> s,
                                                           HashMap<String, ArrayList> potentialJoins, Set<String> selectTables,
                                                           ArrayList<String> select, Set<String> keys, ArrayList<ArrayList<String>> ogS,
@@ -635,6 +706,11 @@ class Conquer{
 
     }
 
+    /**
+     * function to compute all the tuples in Q*phi
+     * @return the set of all join tuples in Q*phi
+     * @throws Exception
+     */
     public static ArrayList<ArrayList<String>> getAllTuples(Statement stmt) throws Exception {
         ArrayList<ArrayList<String>> allTuples = new ArrayList<>();
         ResultSet qStarPhiRS = stmt.executeQuery(qStarPhi);
@@ -661,6 +737,12 @@ class Conquer{
         return allTuples;
     }
 
+    /**
+     * function to check if the set of all join tuples in Q*phi contains a why-not question
+     * @param whyNot : a why-not question
+     * @param allTuples : set of all join tuples in Q*phi
+     * @return true if it contains, false if it does not
+     */
     public static boolean containsWhyNot(ArrayList<String> whyNot, ArrayList<ArrayList<String>> allTuples) {
         for (int i = 1; i < allTuples.size(); i++) {
             boolean isOkRow = true;
@@ -686,6 +768,12 @@ class Conquer{
         return false;
     }
 
+    /**
+     * function to check if the set of ideal tuples contains a certain tuple
+     * @param val : the tuple to be checked
+     * @param idealResults : the set of ideal tuples
+     * @return true if it contains, false if it does not
+     */
     public static boolean containsVal(ArrayList<String> val, ArrayList<ArrayList<String>> idealResults) {
         for(int i = 0; i < idealResults.size(); i++) {
             boolean isOkRow = true;
@@ -709,6 +797,13 @@ class Conquer{
         return false;
     }
 
+    /**
+     * function to compute and return the set of skylike tuples
+     * @param s : the why-not questions
+     * @param allTuples : the set of all join tuples in Q*phi
+     * @return the set of skyline tuples
+     * @throws Exception
+     */
     public static ArrayList<ArrayList<String>> getSL(ArrayList<ArrayList<String>> s, ArrayList<ArrayList<String>> allTuples) throws Exception {
         ArrayList<ArrayList<String>> sl = new ArrayList<>();
         for(ArrayList<String> whyNot: s) {
@@ -720,6 +815,11 @@ class Conquer{
         return sl;
     }
 
+    /**
+     * function to compute and return M' by selection one tuple from each row of SL
+     * @param sl : the set of skyline tuples
+     * @return M'
+     */
     public static Set<ArrayList<String>> getMPrime(ArrayList<ArrayList<String>> sl) {
         Set<ArrayList<String>> combinations = new HashSet<>();
         Set<ArrayList<String>> newCombinations;
@@ -751,6 +851,13 @@ class Conquer{
         return combinations;
     }
 
+    /**
+     * the function to compute and return all possible queries given the tables and their foreign keys
+     * @param query : the input SQL query
+     * @param selectTables : the tables that the columns in the SELECT clause belong to
+     * @param potentialJoins : a map of all tables and their foreign keys
+     * @return set of all possible joins
+     */
     public static ArrayList<String> getAllQueries(String query, Set<String> selectTables, HashMap<String, ArrayList> potentialJoins) {
         ArrayList<String> queries = new ArrayList<>();
         String querySelect = query.substring(0, query.indexOf("FROM") - 1);
@@ -779,6 +886,15 @@ class Conquer{
         return queries;
     }
 
+    /**
+     * function to perform mutations to the input query
+     * @param query : the input SQL query
+     * @param mutationAttrValues : set of mutation rules
+     * @param noOfMutations : number of mutations
+     * @param potentialJoins : a map of all tables and their foreign keys
+     * @return set of all mutated queries
+     * @throws Exception
+     */
     public static ArrayList<String> getMutatedQueries(Statement stmt, String query, ArrayList<String> mutationAttrValues,
                                                       int noOfMutations, HashMap<String, ArrayList> potentialJoins) throws Exception {
         Set<String> attrTables = new HashSet<>();
@@ -839,6 +955,13 @@ class Conquer{
         return newQueries;
     }
 
+    /**
+     * function to check if a refined query is valid, i.e., it contains all why-not questions and input query tuples
+     * @param s : the why-not questions
+     * @param queryTuples : set of all query tuples in Q*
+     * @param refinedQueryTuples : set of all refined query tuples
+     * @return true if refined query is valid, false if it is not
+     */
     public static boolean isValid(ArrayList<ArrayList<String>> s, ArrayList<ArrayList<String>> queryTuples,
                                   ArrayList<ArrayList<String>> refinedQueryTuples) {
         boolean validated = true;
@@ -857,6 +980,13 @@ class Conquer{
         return validated;
     }
 
+    /**
+     * function to compute and return all the why-not questions
+     * @param originalQueryTuples : the tuples the belong to the original query
+     * @param queryTuples : the tuples that belong to the modified query
+     * @return the set of all why-not questions
+     * @throws Exception
+     */
     public static ArrayList<ArrayList<String>> getS(ArrayList<ArrayList<String>>  originalQueryTuples,
                                                     ArrayList<ArrayList<String>> queryTuples) throws Exception {
         ArrayList<ArrayList<String>> s = new ArrayList<>();
