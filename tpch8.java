@@ -3,6 +3,9 @@
 * description: to implement the conquer algorithm for refining query 8 using the tpc-h dataset
 * */
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 import java.sql.*;
 import java.util.*;
 
@@ -876,12 +879,19 @@ class tpch8{
     }
 
     public static void main(String args[]) throws Exception {
-        long startTime = System.currentTimeMillis();
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-        String database = "tpch";
+        System.out.print("Enter MySQL user: ");
+        String user = br.readLine();
+        System.out.print("Enter MySQL password: ");
+        String password = br.readLine();
+        System.out.print("Enter MySQL schema name: ");
+        String database = br.readLine();
+        Class.forName("com.mysql.jdbc.Driver");
+        Class.forName("com.mysql.jdbc.Driver");
         Class.forName("com.mysql.jdbc.Driver");
         Connection con = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/"+database+"?verifyServerCertificate=false&useSSL=true","root","8778");
+                "jdbc:mysql://localhost:3306/"+database+"?verifyServerCertificate=false&useSSL=true", user, password);
         java.sql.Statement stmt = con.createStatement();
 
         ArrayList<String> tableNames = new ArrayList<>();
@@ -940,6 +950,7 @@ class tpch8{
             }
         }
 
+        long startTime = System.currentTimeMillis();
         String originalQuery = "SELECT part.p_name FROM part, partsupp WHERE part.p_partkey = partsupp.ps_partkey \n" +
                 "AND p_retailprice > 800 AND ps_supplycost > 0 AND p_name LIKE \"%beige steel%\"";
         System.out.println("Original Query: " + originalQuery);
